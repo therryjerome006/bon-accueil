@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { MENU_ITEMS, RESERVE_ITEMS } from "@/lib/navigation";
+import { AuthNav } from "@/components/AuthNav";
 
 type NavbarProps = {
   /** Transparent sur le hero de la page d'accueil, opaque sur les autres pages */
@@ -37,12 +38,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20">
-        <Link
-          href="/login"
-          className={`hidden md:inline-flex text-sm tracking-wide hover:opacity-70 ${navTextColor}`}
-        >
-          Log in
-        </Link>
+        <AuthNav className={`hidden md:inline-flex ${navTextColor}`} />
 
         <div className="flex items-center gap-6 md:gap-10">
           <button
@@ -134,9 +130,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               {item.label}
             </Link>
           ))}
-          <Link href="/login" className="text-sm text-ink pt-2" onClick={closeMobile}>
-            Log in
-          </Link>
+          <AuthNav className="text-ink pt-2" onNavigate={closeMobile} />
         </div>
       )}
     </header>

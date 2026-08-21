@@ -7,9 +7,19 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FrondDivider } from "@/components/ui/FrondDivider";
 import { RoomCard } from "@/components/RoomCard";
 import { getRooms } from "@/lib/rooms";
+import {
+  getGoogleMapsEmbedUrl,
+  getGoogleMapsLink,
+  getHotelAddress,
+  getHotelPhoneTel,
+  HOTEL_CITY,
+} from "@/lib/hotel";
+import { getContactPhone } from "@/lib/env";
+import { SITE_IMAGES } from "@/lib/site-images";
 
 export default async function HomePage() {
   const featuredRooms = await getRooms(true);
+  const phone = getContactPhone();
 
   return (
     <main>
@@ -17,24 +27,25 @@ export default async function HomePage() {
 
       {/* HERO */}
       <section className="relative h-screen min-h-[640px] flex items-center justify-center text-center overflow-hidden">
-        {/* Remplacer par une <video autoPlay muted loop> une fois l'asset vidéo disponible */}
         <Image
-          src="/hero-jacmel.jpg"
-          alt="Côte de Jacmel, Haïti"
+          src={SITE_IMAGES.hero}
+          alt="Vue sur Jacmel depuis les hauteurs"
           fill
           priority
+          sizes="100vw"
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-palm-deep/55 via-palm-deep/35 to-palm-deep/75" />
         <div className="relative z-10 px-6 max-w-3xl">
-          <p className="text-xs md:text-sm tracking-[0.3em] uppercase mb-5 text-sand">Jacmel · Haïti</p>
+          <p className="text-xs md:text-sm tracking-[0.3em] uppercase mb-5 text-sand">{HOTEL_CITY}</p>
           <h1 className="font-display text-4xl md:text-6xl leading-tight mb-6 text-linen">
-            Un accueil tropical,
-            <br />à fleur d&apos;océan
+            Un accueil chaleureux,
+            <br />
+            au-dessus de Jacmel
           </h1>
           <p className="text-base md:text-lg mb-10 max-w-xl mx-auto text-palm-soft">
-            Chambres baignées de lumière, table créole et jardins en bord de mer —
-            une parenthèse de calme au cœur de Jacmel.
+            À la campagne, en hauteur — air frais et doux, vue dominante sur la ville.
+            Chambres confortables, table créole et jardins paisibles sur la Route de l&apos;Amitié.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -57,26 +68,38 @@ export default async function HomePage() {
       <section className="max-w-7xl mx-auto px-6 md:px-10 py-24 md:py-32 grid md:grid-cols-2 gap-14 items-center">
         <div className="relative">
           <div className="relative w-full h-[420px] rounded-sm overflow-hidden">
-            <Image src="/images/jardin-piscine.jpg" alt="Jardin et piscine de l'hôtel" fill className="object-cover" />
+            <Image
+              src={SITE_IMAGES.accueil.jardin}
+              alt="Jardin et piscine de l'hôtel"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
           </div>
           <div className="hidden md:block absolute -bottom-10 -right-10 w-56 h-40 rounded-sm overflow-hidden border-4 border-linen">
-            <Image src="/images/table-restaurant.jpg" alt="Table dressée au restaurant" fill className="object-cover" />
+            <Image
+              src={SITE_IMAGES.accueil.restaurantApercu}
+              alt="Table dressée au restaurant"
+              fill
+              sizes="224px"
+              className="object-cover"
+            />
           </div>
         </div>
         <div>
           <Eyebrow>Notre maison</Eyebrow>
           <h2 className="font-display text-3xl md:text-4xl mb-6 text-palm-deep">
-            Une halte chaleureuse, pensée comme une maison de famille
+            Une retraite à la campagne, les yeux sur Jacmel
           </h2>
           <p className="leading-relaxed mb-6 text-ink/80">
-            Niché entre les collines verdoyantes et la mer des Caraïbes, Bon Accueil réunit
-            l&apos;hospitalité haïtienne et un confort raffiné. Chaque recoin de la propriété —
-            des terrasses ombragées aux salons ouverts sur le jardin — porte la signature
-            de l&apos;artisanat local de Jacmel.
+            Perché sur les hauteurs, Bon Accueil n&apos;est pas un hôtel au bord de la plage :
+            c&apos;est une maison à la campagne où l&apos;air est frais et doux, où les terrasses
+            dominent la ville et où le calme remplace l&apos;agitation du centre.
           </p>
           <p className="leading-relaxed mb-8 text-ink/80">
-            Notre équipe, enracinée dans la ville depuis trois générations, vous accueille
-            comme on reçoit un proche : avec attention, simplicité et générosité.
+            L&apos;hospitalité haïtienne, le confort de chambres lumineuses, une cuisine créole
+            généreuse et des jardins ombragés — le tout à quelques minutes de Jacmel, sur la
+            Route de l&apos;Amitié.
           </p>
           <Link href="/a-propos" className="inline-flex items-center gap-2 text-sm tracking-wide text-palm-deep hover:opacity-70">
             Découvrir notre histoire <ArrowRight size={15} />
@@ -89,30 +112,42 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="text-center mb-16">
             <Eyebrow centered>Nos spécialités</Eyebrow>
-            <h2 className="font-display text-3xl md:text-4xl text-palm-deep">Gastronomie créole &amp; art de vivre</h2>
+            <h2 className="font-display text-3xl md:text-4xl text-palm-deep">Gastronomie créole &amp; événements groupés</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-10">
             <div className="bg-white rounded-sm overflow-hidden">
               <div className="relative w-full h-72">
-                <Image src="/images/gastronomie.jpg" alt="Gastronomie créole" fill className="object-cover" />
+                <Image
+                  src={SITE_IMAGES.accueil.gastronomie}
+                  alt="Gastronomie créole"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
               </div>
               <div className="p-8">
                 <h3 className="font-display text-2xl mb-3 text-palm-deep">Gastronomie</h3>
                 <p className="text-sm leading-relaxed text-ink/80">
-                  Une cuisine créole revisitée, produits du marché de Jacmel et fruits de mer
-                  pêchés du jour, servis face à l&apos;océan.
+                  Cuisine créole authentique, produits du marché de Jacmel et recettes de maison —
+                  servie en salle ou en terrasse, avec la brise légère des hauteurs.
                 </p>
               </div>
             </div>
             <div className="bg-white rounded-sm overflow-hidden">
               <div className="relative w-full h-72">
-                <Image src="/images/activites.jpg" alt="Activités proposées par l'hôtel" fill className="object-cover" />
+                <Image
+                  src={SITE_IMAGES.accueil.groupes}
+                  alt="Événements en groupe à l'hôtel"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
               </div>
               <div className="p-8">
-                <h3 className="font-display text-2xl mb-3 text-palm-deep">Activités</h3>
+                <h3 className="font-display text-2xl mb-3 text-palm-deep">Groupes &amp; événements</h3>
                 <p className="text-sm leading-relaxed text-ink/80">
-                  Excursions au Bassin Bleu, ateliers de papier mâché et tours du Carnaval —
-                  l&apos;âme artisanale de Jacmel à portée de main.
+                  Fêtes, journées piscine, sorties scolaires ou excursions — organisez votre
+                  événement chez nous avec traiteur, équipement piscine et espaces dédiés.
                 </p>
               </div>
             </div>
@@ -164,10 +199,11 @@ export default async function HomePage() {
             <FrondDivider />
           </div>
           <h2 className="font-display text-3xl md:text-4xl mt-6 mb-6 text-palm-deep">
-            Réservez votre séjour à Jacmel
+            Réservez votre séjour aux hauteurs de Jacmel
           </h2>
           <p className="mb-8 text-ink/80">
-            Profitez d&apos;un accueil personnalisé, du petit-déjeuner créole à la table d&apos;hôte du soir.
+            Air frais, vue ouverte sur la ville et accueil personnalisé — du petit-déjeuner créole
+            au dîner à la table d&apos;hôte.
           </p>
           <Link href="/chambres" className="inline-block px-8 py-3.5 text-sm tracking-wide bg-palm-deep text-linen rounded-sm hover:bg-palm transition-colors">
             Réserver maintenant
@@ -180,21 +216,31 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 md:px-10 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <Eyebrow>Nous trouver</Eyebrow>
-            <h2 className="font-display text-3xl md:text-4xl mb-5 text-palm-deep">Au cœur de Jacmel</h2>
+            <h2 className="font-display text-3xl md:text-4xl mb-5 text-palm-deep">Sur les hauteurs de Jacmel</h2>
             <p className="mb-6 leading-relaxed text-ink/80">
-              À deux pas du front de mer et des galeries d&apos;art de la ville, Bon Accueil est
-              votre point de départ idéal pour explorer le Sud-Est d&apos;Haïti.
+              Situé à la campagne sur la Route de l&apos;Amitié, Bon Accueil offre une vue
+              dominante sur Jacmel tout en restant proche du centre-ville. Idéal pour un séjour
+              au calme, avec un accès facile aux galeries, marchés et plages du Sud-Est.
             </p>
-            <div className="flex items-center gap-2 text-sm text-palm-deep">
-              <MapPin size={16} /> Rue du Commerce, Jacmel, Haïti
+            <div className="space-y-2 text-sm text-palm-deep">
+              <div className="flex items-start gap-2">
+                <MapPin size={16} className="shrink-0 mt-0.5" />
+                <a href={getGoogleMapsLink()} target="_blank" rel="noopener noreferrer" className="hover:opacity-70">
+                  {getHotelAddress()}
+                </a>
+              </div>
+              <a href={`tel:${getHotelPhoneTel()}`} className="block hover:opacity-70">
+                {phone}
+              </a>
             </div>
           </div>
-          <div className="h-72 md:h-80 rounded-sm flex items-center justify-center bg-palm-soft">
-            <div className="text-center">
-              <MapPin size={28} className="text-palm-deep mx-auto mb-2" />
-              <span className="text-sm text-palm-deep">Carte interactive (Google Maps)</span>
-            </div>
-          </div>
+          <iframe
+            title="Localisation Bon Accueil Hotel"
+            src={getGoogleMapsEmbedUrl()}
+            className="w-full h-72 md:h-80 rounded-sm border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
       </section>
 

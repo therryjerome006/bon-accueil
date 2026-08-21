@@ -3,7 +3,7 @@ export const MENU_ITEMS = [
   { label: "Restaurant", href: "/restaurant" },
   { label: "Détente", href: "/detente" },
   { label: "Événements", href: "/evenements" },
-  { label: "Activités", href: "/activites" },
+  { label: "Groupes & activités", href: "/activites" },
 ] as const;
 
 export const RESERVE_ITEMS = [

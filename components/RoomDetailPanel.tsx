@@ -43,8 +43,8 @@ type RoomDetailPanelProps = {
 export function RoomDetailPanel({ amenities, services }: RoomDetailPanelProps) {
   return (
     <div className="flex flex-col gap-4">
-      <ToggleList label="Équipements" items={amenities} />
-      <ToggleList label="Services" items={services} />
+      {amenities.length > 0 && <ToggleList label="Équipements" items={amenities} />}
+      {services.length > 0 && <ToggleList label="Services" items={services} />}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { AppImage } from "@/components/AppImage";
 import type { Room } from "@/lib/rooms";
 import { getRoomImage } from "@/lib/rooms";
 import {
@@ -13,6 +14,9 @@ import {
 
 type ReservationFormProps = {
   room: Room;
+  stripeCheckout: boolean;
+  isLoggedIn: boolean;
+  accountEmail?: string | null;
 };
 
 const INITIAL: ReservationFormData = {
@@ -24,7 +28,7 @@ const INITIAL: ReservationFormData = {
   phone: "",
 };
 
-export function ReservationForm({ room }: ReservationFormProps) {
+export function ReservationForm({ room, stripeCheckout, isLoggedIn, accountEmail }: ReservationFormProps) {
   const [form, setForm] = useState<ReservationFormData>(INITIAL);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +40,12 @@ export function ReservationForm({ room }: ReservationFormProps) {
   }, [form.checkIn, form.checkOut]);
 
   const total = useMemo(() => calculateTotal(room.price, nights), [room.price, nights]);
+
+  useEffect(() => {
+    if (accountEmail) {
+      setForm((prev) => ({ ...prev, email: accountEmail }));
+    }
+  }, [accountEmail]);
 
   function updateField<K extends keyof ReservationFormData>(key: K, value: ReservationFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -82,7 +92,12 @@ export function ReservationForm({ room }: ReservationFormProps) {
         return;
       }
 
-      setGeneralError("Impossible de rediriger vers le paiement.");
+      if (data.confirmationUrl) {
+        window.location.href = data.confirmationUrl;
+        return;
+      }
+
+      setGeneralError("Impossible de finaliser la réservation.");
     } catch {
       setGeneralError("Connexion impossible. Vérifiez votre réseau et réessayez.");
     } finally {
@@ -97,7 +112,7 @@ export function ReservationForm({ room }: ReservationFormProps) {
     <div className="grid lg:grid-cols-5 gap-10 lg:gap-14">
       <div className="lg:col-span-2">
         <div className="relative w-full h-56 lg:h-72 rounded-sm overflow-hidden mb-5">
-          <Image src={getRoomImage(room)} alt={room.title} fill className="object-cover" />
+          <AppImage src={getRoomImage(room)} alt={room.title} fill sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover" />
         </div>
         <h2 className="font-display text-2xl text-palm-deep mb-2">{room.title}</h2>
         <p className="text-sm text-ink/70 mb-4">
@@ -113,7 +128,9 @@ export function ReservationForm({ room }: ReservationFormProps) {
             <span className="font-medium">{room.price} $</span>
           </div>
           <div className="border-t border-palm-soft/50 pt-3 mt-3 flex justify-between">
-            <span className="text-palm-deep font-medium">Total</span>
+            <span className="text-palm-deep font-medium">
+              {stripeCheckout ? "Total" : "Total indicatif"}
+            </span>
             <span className="font-display text-xl text-palm-deep">
               {nights > 0 ? `${total} $` : "—"}
             </span>
@@ -128,6 +145,31 @@ export function ReservationForm({ room }: ReservationFormProps) {
           <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-sm px-4 py-3" role="alert">
             {generalError}
           </p>
+        )}
+
+        {isLoggedIn ? (
+          <div className="text-sm text-palm-deep bg-palm-soft/20 border border-palm-soft/60 rounded-sm px-4 py-3 leading-relaxed">
+            <strong>Compte connecté.</strong> Vous recevrez la confirmation dans votre{" "}
+            <Link href="/compte" className="underline hover:opacity-70">
+              espace client
+            </Link>{" "}
+            (notifications sur le site). Aucun email automatique ne sera envoyé par le site.
+          </div>
+        ) : (
+          <div className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 leading-relaxed">
+            <strong>Sans compte :</strong> votre demande sera examinée par l&apos;hôtel. La confirmation
+            vous sera envoyée <strong>par email directement par l&apos;hôtel</strong> (pas par le site).{" "}
+            <Link href="/login" className="text-palm-deep underline hover:opacity-70">
+              Connectez-vous
+            </Link>{" "}
+            pour suivre votre réservation sur le site.
+          </div>
+        )}
+
+        {!stripeCheckout && isLoggedIn && (
+          <div className="text-sm text-ink/70 border border-palm-soft/40 rounded-sm px-4 py-3 leading-relaxed">
+            Paiement sur place à l&apos;arrivée — aucun débit en ligne.
+          </div>
         )}
 
         <div className="grid sm:grid-cols-2 gap-5">
@@ -175,8 +217,9 @@ export function ReservationForm({ room }: ReservationFormProps) {
               type="email"
               autoComplete="email"
               value={form.email}
+              readOnly={isLoggedIn && Boolean(accountEmail)}
               onChange={(e) => updateField("email", e.target.value)}
-              className={inputClass}
+              className={`${inputClass}${isLoggedIn && accountEmail ? " bg-sand/40" : ""}`}
             />
             {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
           </div>
@@ -231,16 +274,30 @@ export function ReservationForm({ room }: ReservationFormProps) {
           </div>
         </div>
 
-        <p className="text-xs text-ink/50">
-          Vous serez redirigé vers Stripe pour finaliser le paiement en toute sécurité.
-        </p>
+        {stripeCheckout ? (
+          <p className="text-xs text-ink/50">
+            Vous serez redirigé vers Stripe pour finaliser le paiement en toute sécurité.
+          </p>
+        ) : (
+          <p className="text-xs text-ink/50">
+            {isLoggedIn
+              ? "La confirmation apparaîtra dans Mon compte dès validation par l'hôtel."
+              : "L'hôtel vous contactera par email une fois votre demande traitée."}
+          </p>
+        )}
 
         <button
           type="submit"
           disabled={submitting || nights < 1}
           className="px-8 py-3.5 text-sm tracking-wide bg-palm-deep text-linen rounded-sm hover:bg-palm transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
         >
-          {submitting ? "Redirection vers le paiement…" : `Payer ${nights > 0 ? `${total} $` : ""}`}
+          {submitting
+            ? stripeCheckout
+              ? "Redirection vers le paiement…"
+              : "Confirmation en cours…"
+            : stripeCheckout
+              ? `Payer ${nights > 0 ? `${total} $` : ""}`
+              : "Envoyer ma demande"}
         </button>
       </form>
     </div>

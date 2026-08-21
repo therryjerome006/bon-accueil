@@ -17,3 +17,10 @@ export function getStripe(): Stripe {
 export function hasStripe(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }
+
+export function getStripeMode(): "test" | "live" | "unknown" {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (key.startsWith("sk_test_")) return "test";
+  if (key.startsWith("sk_live_")) return "live";
+  return "unknown";
+}

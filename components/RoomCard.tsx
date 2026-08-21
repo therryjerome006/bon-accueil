@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { AppImage } from "@/components/AppImage";
 import type { Room } from "@/lib/rooms";
 import { getRoomImage } from "@/lib/rooms";
 
@@ -11,7 +11,13 @@ export function RoomCard({ room }: RoomCardProps) {
   return (
     <article className="group rounded-sm overflow-hidden bg-white transition-transform hover:-translate-y-1.5 hover:shadow-xl">
       <div className="relative w-full h-64">
-        <Image src={getRoomImage(room)} alt={room.title} fill className="object-cover" />
+        <AppImage
+          src={getRoomImage(room)}
+          alt={room.title}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover"
+        />
       </div>
       <div className="p-7">
         <h3 className="font-display text-xl mb-2 text-palm-deep">{room.title}</h3>

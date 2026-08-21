@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "reset:test": "node scripts/reset-test-data.mjs --confirm",
+    "reset:test:dry": "node scripts/reset-test-data.mjs",
+    "supabase:sql": "node scripts/run-supabase-sql.mjs",
+    "supabase:check-notifications": "node scripts/check-notifications-table.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

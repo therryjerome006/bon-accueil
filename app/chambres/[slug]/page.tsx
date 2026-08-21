@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import { AppImage } from "@/components/AppImage";
 import { notFound } from "next/navigation";
 import { Users, Maximize2, ArrowLeft } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -50,13 +50,26 @@ export default async function RoomDetailPage({ params }: PageProps) {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
             <div>
               <div className="relative w-full h-80 md:h-[480px] rounded-sm overflow-hidden">
-                <Image src={mainImage} alt={room.title} fill className="object-cover" priority />
+                <AppImage
+                  src={mainImage}
+                  alt={room.title}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                />
               </div>
               {room.images.length > 1 && (
                 <div className="grid grid-cols-3 gap-3 mt-3">
                   {room.images.slice(1, 4).map((img) => (
                     <div key={img} className="relative h-24 rounded-sm overflow-hidden">
-                      <Image src={img} alt={room.title} fill className="object-cover" />
+                      <AppImage
+                        src={img}
+                        alt={room.title}
+                        fill
+                        sizes="(max-width: 1024px) 33vw, 15vw"
+                        className="object-cover"
+                      />
                     </div>
                   ))}
                 </div>

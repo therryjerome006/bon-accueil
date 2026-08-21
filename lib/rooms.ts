@@ -1,5 +1,9 @@
-import { supabase } from "@/lib/supabaseClient";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/types/database.types";
+import { allowStaticFallback, hasSupabasePublic } from "@/lib/env";
+import { firstImageUrl, normalizeImageUrl } from "@/lib/image-url";
+import { SITE_IMAGES } from "@/lib/site-images";
 
 export const AMENITY_LABELS = [
   "Télévision",
@@ -40,8 +44,8 @@ const STATIC_ROOMS: Room[] = [
     capacity: 2,
     surface: 22,
     description:
-      "Une chambre lumineuse et fonctionnelle, idéale pour un séjour court à Jacmel. Vue sur le jardin tropical, literie confortable et ambiance apaisante au cœur de l'hôtel.",
-    images: ["/images/rooms/standard.jpg"],
+      "Une chambre lumineuse et fonctionnelle, idéale pour un séjour court à Jacmel. Vue jardin et colline, air frais des hauteurs, literie confortable et ambiance apaisante.",
+    images: [SITE_IMAGES.chambres.standard],
     amenities: ["Télévision", "Air conditionné", "Toilettes séparées", "Sèche-cheveux"],
     services: ["Accès internet", "Parking gratuit"],
     isFeatured: true,
@@ -53,8 +57,8 @@ const STATIC_ROOMS: Room[] = [
     capacity: 2,
     surface: 32,
     description:
-      "Espace généreux avec terrasse privée et vue partielle sur la mer. Finitions en bois local, salle de bain spacieuse et tous les conforts pour un séjour prolongé en toute sérénité.",
-    images: ["/images/rooms/deluxe.jpg"],
+      "Espace généreux avec terrasse privée et vue dominante sur Jacmel. Finitions en bois local, salle de bain spacieuse et brise légère des hauteurs pour un séjour prolongé.",
+    images: [SITE_IMAGES.chambres.deluxe],
     amenities: [
       "Télévision",
       "Air conditionné",
@@ -74,8 +78,8 @@ const STATIC_ROOMS: Room[] = [
     capacity: 4,
     surface: 55,
     description:
-      "Notre suite signature : salon séparé, deux chambres, terrasse panoramique face à l'océan. L'expérience ultime de l'hospitalité jacmélienne, pensée pour les familles ou les séjours d'exception.",
-    images: ["/images/rooms/suite.jpg"],
+      "Notre suite signature : salon séparé, deux chambres, terrasse panoramique sur Jacmel et les collines. L'expérience ultime de l'hospitalité jacmélienne, au calme de la campagne.",
+    images: [SITE_IMAGES.chambres.suite],
     amenities: [
       "Télévision",
       "Air conditionné",
@@ -100,51 +104,79 @@ function mapDbRoom(row: Tables<"rooms">): Room {
     capacity: row.capacity,
     surface: row.surface ?? 0,
     description: row.description ?? "",
-    images: row.images.length > 0 ? row.images : ["/images/rooms/standard.jpg"],
+    images: row.images.length > 0 ? row.images.map(normalizeImageUrl).filter(Boolean) : [SITE_IMAGES.chambres.fallback],
     amenities: row.amenities,
     services: row.services,
     isFeatured: row.is_featured,
   };
 }
 
-async function fetchRoomsFromDb(): Promise<Room[] | null> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return null;
+async function fetchRoomsFromDb(): Promise<{ rooms: Room[]; error?: boolean }> {
+  if (!hasSupabasePublic()) {
+    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [] };
   }
 
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("*")
-    .eq("status", "available")
-    .order("price", { ascending: true });
+  const supabase = createPublicClient();
+  if (!supabase) {
+    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [] };
+  }
 
-  if (error || !data?.length) return null;
-  return data.map(mapDbRoom);
+  try {
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("status", "available")
+      .order("price", { ascending: true });
+
+    if (error) {
+      console.error("[rooms] fetch:", error.message);
+      return { rooms: allowStaticFallback() ? STATIC_ROOMS : [], error: true };
+    }
+
+    return { rooms: (data ?? []).map(mapDbRoom) };
+  } catch (err) {
+    console.error("[rooms] fetch:", err instanceof Error ? err.message : err);
+    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [], error: true };
+  }
 }
 
+const fetchRoomsCached = unstable_cache(
+  async () => fetchRoomsFromDb(),
+  ["rooms-list"],
+  { revalidate: 60 },
+);
+
 export async function getRooms(featuredOnly = false): Promise<Room[]> {
-  const dbRooms = await fetchRoomsFromDb();
-  const rooms = dbRooms ?? STATIC_ROOMS;
+  const { rooms } = await fetchRoomsCached();
   return featuredOnly ? rooms.filter((r) => r.isFeatured !== false).slice(0, 3) : rooms;
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | null> {
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    const { data, error } = await supabase
-      .from("rooms")
-      .select("*")
-      .eq("slug", slug)
-      .eq("status", "available")
-      .maybeSingle();
+  if (hasSupabasePublic()) {
+    const supabase = createPublicClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("rooms")
+          .select("*")
+          .eq("slug", slug)
+          .eq("status", "available")
+          .maybeSingle();
 
-    if (!error && data) return mapDbRoom(data);
+        if (!error && data) return mapDbRoom(data);
+        if (!error) return null;
+        console.error("[rooms] getBySlug:", error.message);
+      } catch (err) {
+        console.error("[rooms] getBySlug:", err instanceof Error ? err.message : err);
+      }
+    }
   }
 
-  return STATIC_ROOMS.find((r) => r.slug === slug) ?? null;
+  return allowStaticFallback() ? (STATIC_ROOMS.find((r) => r.slug === slug) ?? null) : null;
 }
 
 export function getRoomImage(room: Room): string {
-  return room.images[0] ?? "/images/rooms/standard.jpg";
+  return firstImageUrl(room.images, SITE_IMAGES.chambres.fallback);
 }
 
 function staticRoomToInsert(room: Room) {
@@ -164,31 +196,67 @@ function staticRoomToInsert(room: Room) {
 }
 
 /** Résout l'UUID Supabase d'une chambre (crée depuis les données statiques si besoin). */
-export async function ensureRoomId(slug: string): Promise<string | null> {
+export async function ensureRoomId(slug: string): Promise<{ id: string } | { error: string }> {
   const room = await getRoomBySlug(slug);
-  if (!room) return null;
+  if (!room) return { error: "Chambre introuvable." };
 
-  if (room.id) return room.id;
+  if (room.id) return { id: room.id };
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { error: "NEXT_PUBLIC_SUPABASE_URL manquante dans .env.local." };
+  }
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return {
+      error:
+        "SUPABASE_SERVICE_ROLE_KEY manquante. Ajoutez la clé service_role depuis Supabase → Project Settings → API.",
+    };
+  }
 
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
 
-    const { data: existing } = await admin.from("rooms").select("id").eq("slug", slug).maybeSingle();
-    if (existing?.id) return existing.id;
+    const { data: existing, error: selectError } = await admin
+      .from("rooms")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
 
-    const { data: inserted, error } = await admin
+    if (selectError) {
+      console.error("[ensureRoomId] select:", selectError);
+      if (selectError.message.includes("Invalid API key")) {
+        return {
+          error:
+            "Clé Supabase service_role invalide. Regénérez-la dans Supabase → Project Settings → API → service_role (secret), mettez à jour .env.local et redémarrez le serveur.",
+        };
+      }
+      return { error: `Erreur Supabase : ${selectError.message}` };
+    }
+
+    if (existing?.id) return { id: existing.id };
+
+    const { data: inserted, error: insertError } = await admin
       .from("rooms")
       .insert(staticRoomToInsert(room))
       .select("id")
       .single();
 
-    if (error || !inserted) return null;
-    return inserted.id;
-  } catch {
-    return null;
+    if (insertError) {
+      console.error("[ensureRoomId] insert:", insertError);
+      if (insertError.code === "23505") {
+        const { data: retry } = await admin.from("rooms").select("id").eq("slug", slug).maybeSingle();
+        if (retry?.id) return { id: retry.id };
+      }
+      return { error: `Impossible de créer la chambre : ${insertError.message}` };
+    }
+
+    if (!inserted?.id) return { error: "La chambre n'a pas pu être enregistrée." };
+    return { id: inserted.id };
+  } catch (err) {
+    console.error("[ensureRoomId]", err);
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    return { error: message };
   }
 }
 
@@ -196,17 +264,33 @@ export async function checkRoomAvailability(
   roomId: string,
   checkIn: string,
   checkOut: string,
-): Promise<boolean> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return true;
+): Promise<{ available: boolean; error?: string }> {
+  if (!hasSupabasePublic()) {
+    if (allowStaticFallback()) return { available: true };
+    return { available: false, error: "Supabase non configuré." };
   }
 
-  const { data, error } = await supabase.rpc("is_room_available", {
+  const supabase = createPublicClient();
+  if (!supabase) {
+    return { available: false, error: "Supabase non configuré." };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("is_room_available", {
     p_room_id: roomId,
     p_check_in: checkIn,
     p_check_out: checkOut,
-  });
+    });
 
-  if (error) return true;
-  return Boolean(data);
+    if (error) {
+      console.error("[availability]", error.message);
+      return { available: false, error: error.message };
+    }
+
+    return { available: Boolean(data) };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erreur réseau";
+    console.error("[availability]", message);
+    return { available: false, error: message };
+  }
 }

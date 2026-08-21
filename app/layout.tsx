@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { HOTEL_DESCRIPTION, HOTEL_NAME, HOTEL_CITY } from "@/lib/hotel";
+import { NotificationFab } from "@/components/NotificationFab";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -18,9 +20,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Bon Accueil Hotel — Jacmel, Haïti",
-  description:
-    "Hôtel boutique à Jacmel : chambres tropicales, gastronomie créole et activités au bord de l'océan.",
+  title: `${HOTEL_NAME} — ${HOTEL_CITY}`,
+  description: HOTEL_DESCRIPTION,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className={`${fraunces.variable} ${inter.variable} font-sans bg-linen text-ink`}>
         {children}
+        <NotificationFab />
       </body>
     </html>
   );

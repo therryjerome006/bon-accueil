@@ -8,7 +8,8 @@ import { getRooms } from "@/lib/rooms";
 
 export const metadata: Metadata = {
   title: "Chambres — Bon Accueil Hotel",
-  description: "Découvrez nos chambres et suites à Jacmel : confort tropical, vue mer et hospitalité haïtienne.",
+  description:
+    "Chambres et suites aux hauteurs de Jacmel : air frais, vue sur la ville et hospitalité haïtienne à la campagne.",
 };
 
 export default async function ChambresPage() {
@@ -23,8 +24,8 @@ export default async function ChambresPage() {
             <Eyebrow inverted>Hébergement</Eyebrow>
             <h1 className="font-display text-4xl md:text-5xl mb-5">Nos chambres</h1>
             <p className="text-palm-soft max-w-2xl leading-relaxed">
-              Chambres baignées de lumière, literie confortable et ambiance tropicale —
-              choisissez l&apos;espace qui correspond à votre séjour à Jacmel.
+              Chambres lumineuses, literie confortable et air frais des hauteurs — avec vue sur
+              Jacmel, le jardin ou les collines. Choisissez l&apos;espace qui correspond à votre séjour.
             </p>
           </div>
         </section>
