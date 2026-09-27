@@ -33,6 +33,13 @@ export default function MentionsLegalesPage() {
             </p>
           </div>
           <div>
+            <h2 className="font-display text-xl text-palm-deep mb-2">Réalisation du site</h2>
+            <p>
+              Conception et développement : <strong>Therry Adler Jerome</strong>, développeur
+              d&apos;applications web modernes.
+            </p>
+          </div>
+          <div>
             <h2 className="font-display text-xl text-palm-deep mb-2">Hébergement</h2>
             <p>
               Le site est hébergé par Vercel Inc. — 440 N Barranca Ave #4133, Covina, CA 91723, USA.

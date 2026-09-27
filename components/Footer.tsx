@@ -63,16 +63,23 @@ export function Footer() {
           </a>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-3 text-xs text-palm-soft">
-        <span>© 2026 Bon Accueil Hotel — Tous droits réservés</span>
-        <div className="flex gap-6">
-          <Link href="/mentions-legales" className="hover:opacity-70">
-            Mentions légales
-          </Link>
-          <Link href="/partenaires" className="hover:opacity-70">
-            Partenaires
-          </Link>
+      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 border-t border-white/10 space-y-3 text-xs text-palm-soft">
+        <div className="flex flex-col sm:flex-row justify-between gap-3">
+          <span>© 2026 Bon Accueil Hotel — Tous droits réservés</span>
+          <div className="flex gap-6">
+            <Link href="/mentions-legales" className="hover:opacity-70">
+              Mentions légales
+            </Link>
+            <Link href="/partenaires" className="hover:opacity-70">
+              Partenaires
+            </Link>
+          </div>
         </div>
+        <p className="text-palm-soft/80">
+          Site développé par{" "}
+          <span className="text-sand/90">Therry Adler Jerome</span>, développeur d&apos;applications web
+          modernes.
+        </p>
       </div>
     </footer>
   );
