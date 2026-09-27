@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getContactEmail, getContactPhone } from "@/lib/env";
 import { getHotelAddressShort, getHotelPhoneTel, HOTEL_CITY, HOTEL_SETTING } from "@/lib/hotel";
+import { getWhatsAppUrl } from "@/lib/whatsapp";
 
 export function Footer() {
   const phone = getContactPhone();
@@ -42,6 +43,9 @@ export function Footer() {
           <Link href="/services" className="block text-sm mb-2 hover:opacity-70">
             Services
           </Link>
+          <Link href="/contact" className="block text-sm hover:opacity-70">
+            Contact
+          </Link>
         </div>
         <div>
           <h4 className="text-xs uppercase tracking-wide mb-4 text-sand">Réseaux</h4>
@@ -55,11 +59,19 @@ export function Footer() {
           </a>
           <a
             href={process.env.NEXT_PUBLIC_FACEBOOK_URL ?? "#"}
-            className="block text-sm hover:opacity-70"
+            className="block text-sm mb-2 hover:opacity-70"
             target="_blank"
             rel="noopener noreferrer"
           >
             Facebook
+          </a>
+          <a
+            href={getWhatsAppUrl()}
+            className="block text-sm hover:opacity-70"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
           </a>
         </div>
       </div>

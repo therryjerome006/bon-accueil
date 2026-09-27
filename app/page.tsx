@@ -17,6 +17,7 @@ import {
 } from "@/lib/hotel";
 import { getContactPhone } from "@/lib/env";
 import { getAccueilGalleries, getHeroSlides } from "@/lib/image-gallery.server";
+import { WhatsAppContactSection } from "@/components/WhatsAppContactSection";
 
 export default async function HomePage() {
   const featuredRooms = await getRooms(true);
@@ -200,6 +201,8 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      <WhatsAppContactSection />
 
       {/* LOCALISATION */}
       <section className="bg-sand py-24">

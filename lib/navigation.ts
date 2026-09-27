@@ -4,6 +4,7 @@ export const MENU_ITEMS = [
   { label: "Détente", href: "/detente" },
   { label: "Événements", href: "/evenements" },
   { label: "Groupes & activités", href: "/activites" },
+  { label: "Contact", href: "/contact" },
 ] as const;
 
 export const RESERVE_ITEMS = [

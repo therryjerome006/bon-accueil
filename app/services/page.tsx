@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { PageHero } from "@/components/PageHero";
 import { GalleryFrame } from "@/components/GalleryFrame";
 import { getServicesGalleries } from "@/lib/image-gallery.server";
+import { WhatsAppContactSection } from "@/components/WhatsAppContactSection";
 
 export const metadata: Metadata = {
   title: "Services — Bon Accueil Hotel",
@@ -98,6 +99,8 @@ export default function ServicesPage() {
             </div>
           </div>
         </section>
+
+        <WhatsAppContactSection />
       </main>
       <Footer />
     </>
