@@ -1,48 +1,16 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/types/database.types";
 import { allowStaticFallback, hasSupabasePublic } from "@/lib/env";
-import { SITE_IMAGES, restaurantTableImageForCapacity } from "@/lib/site-images";
-import { firstImageUrl, normalizeImageUrl, parseImageUrls } from "@/lib/image-url";
+import { normalizeImageUrl } from "@/lib/image-url";
+import type { RestaurantTable } from "@/lib/restaurant.types";
+import {
+  imageUrls,
+  restaurantTableGalleryForCapacity,
+  restaurantTableImageForCapacity,
+} from "@/lib/image-gallery.server";
 
-export type RestaurantTable = {
-  id?: string;
-  slug: string;
-  name: string;
-  capacity: number;
-  description: string;
-  images: string[];
-};
-
-const STATIC_TABLES: RestaurantTable[] = [
-  {
-    slug: "table-2",
-    name: "Table pour 2",
-    capacity: 2,
-    description: "Intime et avec vue dégagée sur Jacmel — idéale pour un dîner en couple au coucher du soleil.",
-    images: [SITE_IMAGES.restaurant.table2],
-  },
-  {
-    slug: "table-4",
-    name: "Table pour 4",
-    capacity: 4,
-    description: "Au cœur de la terrasse ombragée, parfaite pour un déjeuner en famille ou entre amis.",
-    images: [SITE_IMAGES.restaurant.table4],
-  },
-  {
-    slug: "table-6",
-    name: "Table pour 6",
-    capacity: 6,
-    description: "Grande table conviviale pour célébrer un moment spécial, avec vue sur le jardin et la ville.",
-    images: [SITE_IMAGES.restaurant.table6],
-  },
-  {
-    slug: "table-8",
-    name: "Table pour 8",
-    capacity: 8,
-    description: "Espace privatif pour groupes et événements intimes, avec service dédié.",
-    images: [SITE_IMAGES.restaurant.table8],
-  },
-];
+export type { RestaurantTable } from "@/lib/restaurant.types";
+export { getTableImage, getTableKey, getTableReservationParam } from "@/lib/restaurant-utils";
 
 function slugFromName(name: string): string {
   return name
@@ -53,10 +21,45 @@ function slugFromName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function mapDbTable(row: Tables<"restaurant_tables">): RestaurantTable {
+async function buildStaticTables(): Promise<RestaurantTable[]> {
+  return [
+    {
+      slug: "table-2",
+      name: "Table pour 2",
+      capacity: 2,
+      description:
+        "Intime et avec vue dégagée sur Jacmel — idéale pour un dîner en couple au coucher du soleil.",
+      images: imageUrls(restaurantTableGalleryForCapacity(2)),
+    },
+    {
+      slug: "table-4",
+      name: "Table pour 4",
+      capacity: 4,
+      description:
+        "Au cœur de la terrasse ombragée, parfaite pour un déjeuner en famille ou entre amis.",
+      images: imageUrls(restaurantTableGalleryForCapacity(4)),
+    },
+    {
+      slug: "table-6",
+      name: "Table pour 6",
+      capacity: 6,
+      description:
+        "Grande table conviviale pour célébrer un moment spécial, avec vue sur le jardin et la ville.",
+      images: imageUrls(restaurantTableGalleryForCapacity(6)),
+    },
+    {
+      slug: "table-8",
+      name: "Table pour 8",
+      capacity: 8,
+      description: "Espace privatif pour groupes et événements intimes, avec service dédié.",
+      images: imageUrls(restaurantTableGalleryForCapacity(8)),
+    },
+  ];
+}
+
+async function mapDbTable(row: Tables<"restaurant_tables">): Promise<RestaurantTable> {
   return {
     id: row.id,
-    // UUID unique — évite les doublons quand plusieurs tables ont le même nom
     slug: row.id,
     name: row.name,
     capacity: row.capacity,
@@ -68,22 +71,15 @@ function mapDbTable(row: Tables<"restaurant_tables">): RestaurantTable {
   };
 }
 
-/** Clé React / identifiant stable (priorité à l'id Supabase) */
-export function getTableKey(table: RestaurantTable): string {
-  return table.id ?? table.slug;
-}
-
-export function getTableReservationParam(table: RestaurantTable): string {
-  return table.id ?? table.slug;
-}
-
 export async function getRestaurantTables(): Promise<RestaurantTable[]> {
+  const staticTables = await buildStaticTables();
+
   if (!hasSupabasePublic()) {
-    return allowStaticFallback() ? STATIC_TABLES : [];
+    return allowStaticFallback() ? staticTables : [];
   }
 
   const supabase = createPublicClient();
-  if (!supabase) return allowStaticFallback() ? STATIC_TABLES : [];
+  if (!supabase) return allowStaticFallback() ? staticTables : [];
 
   try {
     const { data, error } = await supabase
@@ -94,13 +90,13 @@ export async function getRestaurantTables(): Promise<RestaurantTable[]> {
 
     if (error) {
       console.error("[restaurant] fetch:", error.message);
-      return allowStaticFallback() ? STATIC_TABLES : [];
+      return allowStaticFallback() ? staticTables : [];
     }
 
-    return (data ?? []).map(mapDbTable);
+    return await Promise.all((data ?? []).map(mapDbTable));
   } catch (err) {
     console.error("[restaurant] fetch:", err instanceof Error ? err.message : err);
-    return allowStaticFallback() ? STATIC_TABLES : [];
+    return allowStaticFallback() ? staticTables : [];
   }
 }
 
@@ -110,15 +106,10 @@ export async function getRestaurantTableBySlug(slugOrId: string): Promise<Restau
   const byId = tables.find((t) => t.id === slugOrId || t.slug === slugOrId);
   if (byId) return byId;
 
-  // Anciens liens du type ?table=table-pour-2
   const legacyMatches = tables.filter((t) => slugFromName(t.name) === slugOrId);
   if (legacyMatches.length === 1) return legacyMatches[0];
 
   return null;
-}
-
-export function getTableImage(table: RestaurantTable): string {
-  return firstImageUrl(table.images, SITE_IMAGES.restaurant.fallback);
 }
 
 export async function checkTableAvailability(

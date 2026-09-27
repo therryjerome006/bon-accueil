@@ -43,3 +43,6 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.is_room_available(uuid, date, date, uuid) TO authenticated, anon, service_role;
+
+-- Le propriétaire de la fonction (postgres) doit pouvoir lire reservations en SECURITY DEFINER
+GRANT SELECT ON public.reservations TO postgres, service_role;

@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppImage } from "@/components/AppImage";
-import type { Room } from "@/lib/rooms";
-import { getRoomImage } from "@/lib/rooms";
+import type { Room } from "@/lib/rooms.types";
+import { getRoomImage } from "@/lib/room-utils";
 import {
   calculateNights,
   calculateTotal,

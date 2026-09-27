@@ -1,6 +1,7 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/types/database.types";
 import { allowStaticFallback, hasSupabasePublic } from "@/lib/env";
+import { firstImage, getGroupesGalleries, imageUrls } from "@/lib/image-gallery.server";
 
 /** @deprecated Utiliser lib/group-events.ts pour la page publique. Conservé pour l'admin et réservations futures. */
 export type Activity = {
@@ -32,7 +33,7 @@ function mapDbActivity(row: Tables<"activities">): Activity {
     date: row.date,
     price: row.price,
     description: row.description ?? "",
-    images: row.images.length > 0 ? row.images : ["/images/activites.jpg"],
+    images: row.images.length > 0 ? row.images : imageUrls(getGroupesGalleries().hero),
   };
 }
 
@@ -64,7 +65,7 @@ export async function getActivities(): Promise<Activity[]> {
 }
 
 export function getActivityImage(activity: Activity): string {
-  return activity.images[0] ?? "/images/activites.jpg";
+  return activity.images[0] ?? firstImage(getGroupesGalleries().hero);
 }
 
 export function formatActivityDate(isoDate: string): string {

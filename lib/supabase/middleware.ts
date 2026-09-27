@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database.types";
+import { finalizeAdminGate, withPathnameHeader } from "@/lib/admin/gate-middleware";
 
 const PROTECTED_PREFIXES = ["/admin", "/login", "/compte"];
 
@@ -12,10 +13,11 @@ function needsAuthCheck(pathname: string): boolean {
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const requestHeaders = withPathnameHeader(request);
 
-  // Pages publiques : aucun appel Supabase (évite les lags réseau)
-  if (!needsAuthCheck(pathname)) {
-    return NextResponse.next({ request });
+  if (!needsAuthCheck(pathname) && !pathname.startsWith("/api/admin")) {
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    return await finalizeAdminGate(request, response, pathname);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,10 +27,11 @@ export async function updateSession(request: NextRequest) {
     if (pathname.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    return NextResponse.next({ request });
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    return await finalizeAdminGate(request, response, pathname);
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
     cookies: {
@@ -37,7 +40,7 @@ export async function updateSession(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({ request });
+        supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options),
         );
@@ -58,7 +61,7 @@ export async function updateSession(request: NextRequest) {
     if (pathname.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/login?error=auth", request.url));
     }
-    return supabaseResponse;
+    return await finalizeAdminGate(request, supabaseResponse, pathname);
   }
 
   if (pathname.startsWith("/admin")) {
@@ -95,9 +98,9 @@ export async function updateSession(request: NextRequest) {
       const dest = profile?.role === "admin" ? "/admin" : "/compte";
       return NextResponse.redirect(new URL(dest, request.url));
     } catch {
-      return supabaseResponse;
+      return await finalizeAdminGate(request, supabaseResponse, pathname);
     }
   }
 
-  return supabaseResponse;
+  return await finalizeAdminGate(request, supabaseResponse, pathname);
 }

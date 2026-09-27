@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Eyebrow } from "@/components/ui/Eyebrow";
+import { PageHero } from "@/components/PageHero";
 import { RoomCard } from "@/components/RoomCard";
 import { getRooms } from "@/lib/rooms";
+import { getChambresGalleries } from "@/lib/image-gallery.server";
 
 export const metadata: Metadata = {
   title: "Chambres — Bon Accueil Hotel",
@@ -14,21 +15,18 @@ export const metadata: Metadata = {
 
 export default async function ChambresPage() {
   const rooms = await getRooms();
+  const chambresHero = getChambresGalleries().hero;
 
   return (
     <>
       <Navbar />
       <main className="pt-20 min-h-screen bg-linen">
-        <section className="bg-palm-deep text-linen py-20 md:py-28">
-          <div className="max-w-7xl mx-auto px-6 md:px-10">
-            <Eyebrow inverted>Hébergement</Eyebrow>
-            <h1 className="font-display text-4xl md:text-5xl mb-5">Nos chambres</h1>
-            <p className="text-palm-soft max-w-2xl leading-relaxed">
-              Chambres lumineuses, literie confortable et air frais des hauteurs — avec vue sur
-              Jacmel, le jardin ou les collines. Choisissez l&apos;espace qui correspond à votre séjour.
-            </p>
-          </div>
-        </section>
+        <PageHero
+          eyebrow="Hébergement"
+          title="Nos chambres"
+          description="Chambres lumineuses, literie confortable et air frais des hauteurs — avec vue sur Jacmel, le jardin ou les collines."
+          slides={chambresHero}
+        />
 
         <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
           {rooms.length === 0 ? (

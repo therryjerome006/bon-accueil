@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { AppImage } from "@/components/AppImage";
-import type { Room } from "@/lib/rooms";
-import { getRoomImage } from "@/lib/rooms";
+import { AppMedia } from "@/components/AppMedia";
+import type { Room } from "@/lib/rooms.types";
+import { getRoomImage } from "@/lib/room-utils";
 
 type RoomCardProps = {
   room: Room;
@@ -11,12 +11,13 @@ export function RoomCard({ room }: RoomCardProps) {
   return (
     <article className="group rounded-sm overflow-hidden bg-white transition-transform hover:-translate-y-1.5 hover:shadow-xl">
       <div className="relative w-full h-64">
-        <AppImage
+        <AppMedia
           src={getRoomImage(room)}
           alt={room.title}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           className="object-cover"
+          playing
         />
       </div>
       <div className="p-7">

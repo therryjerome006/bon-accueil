@@ -10,6 +10,21 @@
 
   --font-display: var(--font-fraunces), serif;
   --font-sans: var(--font-inter), sans-serif;
+  --font-hero: var(--font-syne), sans-serif;
+}
+
+@utility font-hero {
+  font-family: var(--font-hero);
+}
+
+@utility text-shadow-hero {
+  text-shadow:
+    0 2px 28px rgb(0 0 0 / 0.72),
+    0 1px 3px rgb(0 0 0 / 0.92);
+}
+
+@utility text-shadow-hero-sm {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.82);
 }
 
 html {
@@ -24,4 +39,21 @@ html {
     transition-duration: 0.001ms !important;
     animation-duration: 0.001ms !important;
   }
+  .hero-ken-burns {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+@keyframes hero-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.hero-ken-burns {
+  animation: hero-ken-burns 6s ease-out forwards;
 }

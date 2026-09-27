@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AppImage } from "@/components/AppImage";
 import { notFound } from "next/navigation";
 import { Users, Maximize2, ArrowLeft } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import { RoomDetailPanel } from "@/components/RoomDetailPanel";
-import { getRoomBySlug, getRooms, getRoomImage } from "@/lib/rooms";
+import { getRoomBySlug, getRooms } from "@/lib/rooms";
+import { urlsToSlides } from "@/lib/image-gallery.server";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -33,7 +34,8 @@ export default async function RoomDetailPage({ params }: PageProps) {
 
   if (!room) notFound();
 
-  const mainImage = getRoomImage(room);
+  // Uniquement les médias de la fiche (admin / base). Dossiers public/images/chambres/… = secours si vide.
+  const slides = urlsToSlides(room.images, room.title);
 
   return (
     <>
@@ -49,31 +51,12 @@ export default async function RoomDetailPage({ params }: PageProps) {
 
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
             <div>
-              <div className="relative w-full h-80 md:h-[480px] rounded-sm overflow-hidden">
-                <AppImage
-                  src={mainImage}
-                  alt={room.title}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
-              {room.images.length > 1 && (
-                <div className="grid grid-cols-3 gap-3 mt-3">
-                  {room.images.slice(1, 4).map((img) => (
-                    <div key={img} className="relative h-24 rounded-sm overflow-hidden">
-                      <AppImage
-                        src={img}
-                        alt={room.title}
-                        fill
-                        sizes="(max-width: 1024px) 33vw, 15vw"
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <GalleryFrame
+                slides={slides}
+                className="relative w-full h-80 md:h-[480px]"
+                label={room.title}
+                priority
+              />
             </div>
 
             <div>

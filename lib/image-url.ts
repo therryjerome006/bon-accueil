@@ -35,3 +35,10 @@ export function firstImageUrl(urls: string[] | undefined, fallback: string): str
   const first = urls?.map(normalizeImageUrl).find(Boolean);
   return first ?? fallback;
 }
+
+/** Vidéo hébergée (Storage, CDN, etc.) — ex. .mp4 */
+export function isVideoMediaUrl(url: string): boolean {
+  const normalized = normalizeImageUrl(url).toLowerCase();
+  if (!normalized) return false;
+  return /\.(mp4|webm|mov)(\?|#|$)/i.test(normalized) || normalized.includes("/video/");
+}

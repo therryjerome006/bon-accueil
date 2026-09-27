@@ -1,8 +1,17 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const h = await headers();
+  const pathname = h.get("x-pathname") ?? "";
+  const isUnlock = pathname === "/admin/unlock" || pathname.startsWith("/admin/unlock/");
+
+  if (isUnlock) {
+    return children;
+  }
+
   await requireAdmin();
 
   return (

@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms";
+import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms.constants";
 import { ITEM_STATUSES, slugify } from "@/lib/admin/navigation";
+import { AdminMediaUpload } from "@/components/admin/AdminMediaUpload";
+import { parseImageUrls } from "@/lib/image-url";
 import type { Tables } from "@/types/database.types";
 
 type Room = Tables<"rooms">;
@@ -22,7 +24,8 @@ export function AdminRoomForm({ room }: AdminRoomFormProps) {
   const [capacity, setCapacity] = useState(String(room?.capacity ?? 2));
   const [surface, setSurface] = useState(String(room?.surface ?? ""));
   const [description, setDescription] = useState(room?.description ?? "");
-  const [images, setImages] = useState((room?.images ?? []).join("\n"));
+  const [imageUrls, setImageUrls] = useState<string[]>(() => parseImageUrls(room?.images ?? []));
+  const [manualUrls, setManualUrls] = useState("");
   const [amenities, setAmenities] = useState<string[]>(room?.amenities ?? []);
   const [services, setServices] = useState<string[]>(room?.services ?? []);
   const [isFeatured, setIsFeatured] = useState(room?.is_featured ?? false);
@@ -50,7 +53,7 @@ export function AdminRoomForm({ room }: AdminRoomFormProps) {
       capacity: Number(capacity),
       surface: Number(surface) || null,
       description,
-      images,
+      images: imageUrls,
       amenities,
       services,
       is_featured: isFeatured,
@@ -121,8 +124,37 @@ export function AdminRoomForm({ room }: AdminRoomFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs uppercase text-palm mb-1">Images (une URL par ligne)</label>
-        <textarea rows={3} value={images} onChange={(e) => setImages(e.target.value)} className={inputClass} />
+        <p className="text-xs uppercase text-palm mb-2">Photos de la chambre</p>
+        <AdminMediaUpload
+          urls={imageUrls}
+          onChange={setImageUrls}
+          target="room"
+          entityId={room?.id}
+          slug={slug || slugify(title)}
+          disabled={loading}
+        />
+        <details className="mt-4">
+          <summary className="text-xs text-palm cursor-pointer hover:opacity-80">Ajouter une URL manuellement</summary>
+          <textarea
+            rows={2}
+            value={manualUrls}
+            onChange={(e) => setManualUrls(e.target.value)}
+            placeholder="https://… ou /images/…"
+            className={`${inputClass} mt-2`}
+          />
+          <button
+            type="button"
+            className="mt-2 text-sm text-palm-deep hover:opacity-70"
+            onClick={() => {
+              const extra = parseImageUrls(manualUrls);
+              if (extra.length === 0) return;
+              setImageUrls((prev) => [...prev, ...extra]);
+              setManualUrls("");
+            }}
+          >
+            Ajouter ces URLs à la galerie
+          </button>
+        </details>
       </div>
 
       <div>

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import type { OrganizableEvent } from "@/lib/group-events";
 
 type EventOfferingCardProps = {
@@ -8,15 +8,12 @@ type EventOfferingCardProps = {
 export function EventOfferingCard({ event }: EventOfferingCardProps) {
   return (
     <article className="rounded-sm overflow-hidden bg-white transition-transform hover:-translate-y-1.5 hover:shadow-xl">
-      <div className="relative w-full h-56">
-        <Image
-          src={event.image}
-          alt={event.title}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover"
-        />
-      </div>
+      <GalleryFrame
+        slides={event.slides}
+        variant="card"
+        className="relative w-full h-56"
+        label={event.title}
+      />
       <div className="p-7">
         <h3 className="font-display text-xl mb-3 text-palm-deep">{event.title}</h3>
         {event.highlights && event.highlights.length > 0 && (

@@ -14,6 +14,8 @@ GRANT SELECT ON public.activities TO anon, authenticated;
 GRANT ALL ON public.activities TO service_role;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.reservations TO service_role;
+-- Requis si is_room_available() est appelée avec la clé anon (secours)
+GRANT SELECT ON public.reservations TO postgres;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.table_reservations TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.activity_bookings TO service_role;
 

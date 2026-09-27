@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { SITE_IMAGES } from "@/lib/site-images";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageHero } from "@/components/PageHero";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import { RestaurantTableCard } from "@/components/RestaurantTableCard";
 import { getRestaurantTables, getTableKey } from "@/lib/restaurant";
+import { getRestaurantGalleries } from "@/lib/image-gallery.server";
 
 export const metadata: Metadata = {
   title: "Restaurant — Bon Accueil Hotel",
@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 
 export default async function RestaurantPage() {
   const tables = await getRestaurantTables();
+  const restaurant = getRestaurantGalleries();
 
   return (
     <>
@@ -23,23 +24,33 @@ export default async function RestaurantPage() {
         <PageHero
           eyebrow="Gastronomie"
           title="Notre restaurant"
-          description="Cuisine créole authentique, produits du marché de Jacmel et recettes de maison — en salle ou en terrasse, avec la brise des hauteurs."
+          description="Cuisine créole authentique, produits du marché de Jacmel et recettes de maison — en salle ou en terrasse."
+          slides={restaurant.hero}
         />
 
         <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-20 grid md:grid-cols-2 gap-14 items-center">
-          <div className="relative w-full h-80 md:h-[420px] rounded-sm overflow-hidden">
-            <Image src={SITE_IMAGES.restaurant.hero} alt="Plats créoles au restaurant" fill className="object-cover" />
-          </div>
+          <GalleryFrame
+            slides={restaurant.salle}
+            className="relative w-full h-80 md:h-[420px]"
+            label="Salle du restaurant"
+            priority
+          />
           <div>
             <h2 className="font-display text-3xl text-palm-deep mb-6">Table créole, vue sur Jacmel</h2>
             <p className="leading-relaxed text-ink/80 mb-4">
               Notre chef compose chaque menu autour des produits locaux : légumes du marché,
               épices haïtiennes et recettes transmises de génération en génération.
             </p>
-            <p className="leading-relaxed text-ink/80">
+            <p className="leading-relaxed text-ink/80 mb-8">
               Petit-déjeuner créole, déjeuner en terrasse ombragée ou dîner aux chandelles —
               chaque repas est une invitation à savourer Jacmel, depuis la campagne.
             </p>
+            <GalleryFrame
+              slides={restaurant.plats}
+              className="relative w-full h-48"
+              variant="card"
+              label="Nos plats"
+            />
           </div>
         </section>
 

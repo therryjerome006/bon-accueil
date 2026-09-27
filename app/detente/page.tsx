@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageHero } from "@/components/PageHero";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import { RoomDetailPanel } from "@/components/RoomDetailPanel";
-import { SITE_IMAGES } from "@/lib/site-images";
+import { getDetenteGalleries } from "@/lib/image-gallery.server";
 
 export const metadata: Metadata = {
   title: "Détente — Bon Accueil Hotel",
@@ -23,6 +23,8 @@ const POOL_SERVICES = [
 ];
 
 export default function DetentePage() {
+  const detente = getDetenteGalleries();
+
   return (
     <>
       <Navbar />
@@ -30,13 +32,17 @@ export default function DetentePage() {
         <PageHero
           eyebrow="Bien-être"
           title="Espace détente & piscine"
-          description="Un havre de paix à la campagne — jardin ombragé, piscine et brise légère des hauteurs, loin de l'agitation de la ville."
+          description="Un havre de paix à la campagne — jardin ombragé, piscine et brise légère des hauteurs."
+          slides={detente.hero}
         />
 
         <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24 grid lg:grid-cols-2 gap-14 items-start">
-          <div className="relative w-full h-80 lg:h-[480px] rounded-sm overflow-hidden">
-            <Image src={SITE_IMAGES.detente.piscine} alt="Jardin et piscine de l'hôtel" fill className="object-cover" priority />
-          </div>
+          <GalleryFrame
+            slides={detente.piscine}
+            className="relative w-full h-80 lg:h-[480px]"
+            label="Piscine et jardin"
+            priority
+          />
           <div>
             <h2 className="font-display text-3xl text-palm-deep mb-6">Un jardin en hauteur</h2>
             <p className="leading-relaxed text-ink/80 mb-6">
@@ -59,14 +65,13 @@ export default function DetentePage() {
         </section>
 
         <section className="bg-sand py-16">
-          <div className="max-w-3xl mx-auto px-6 text-center">
-            <div className="relative w-full h-64 rounded-sm overflow-hidden mb-8">
-              <Image src={SITE_IMAGES.detente.spa} alt="Espace spa et bien-être" fill className="object-cover" />
-            </div>
-            <p className="text-sm text-ink/70">
-              Horaires piscine : 7h – 20h · Accès réservé aux hôtes et sur réservation pour les visiteurs.
-            </p>
+          <div className="max-w-7xl mx-auto px-6 md:px-10 grid md:grid-cols-2 gap-10">
+            <GalleryFrame slides={detente.spa} className="relative w-full h-64 md:h-72" label="Spa et bien-être" />
+            <GalleryFrame slides={detente.jardin} className="relative w-full h-64 md:h-72" label="Jardin" />
           </div>
+          <p className="text-sm text-ink/70 text-center mt-10 px-6">
+            Horaires piscine : 7h – 20h · Accès réservé aux hôtes et sur réservation pour les visiteurs.
+          </p>
         </section>
       </main>
       <Footer />

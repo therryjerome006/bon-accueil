@@ -9,8 +9,9 @@ import { HotelServiceCard } from "@/components/HotelServiceCard";
 import {
   HOTEL_EVENT_SERVICES,
   LEGACY_HOTEL_EXCURSIONS_NOTE,
-  ORGANIZABLE_EVENTS,
+  getOrganizableEvents,
 } from "@/lib/group-events";
+import { getGroupesGalleries } from "@/lib/image-gallery.server";
 import { getContactEmail, getContactPhone } from "@/lib/env";
 import { getHotelPhoneTel } from "@/lib/hotel";
 
@@ -23,6 +24,8 @@ export const metadata: Metadata = {
 export default function ActivitesPage() {
   const phone = getContactPhone();
   const email = getContactEmail();
+  const groupesHero = getGroupesGalleries().hero;
+  const events = getOrganizableEvents();
 
   return (
     <>
@@ -32,9 +35,9 @@ export default function ActivitesPage() {
           eyebrow="Groupes & événements"
           title="Organisez votre événement chez nous"
           description="Bon Accueil met ses espaces à votre disposition : vous planifiez votre journée, votre fête ou votre sortie — nous fournissons l'accueil, les lieux et les services sur mesure."
+          slides={groupesHero}
         />
 
-        {/* Partie 1 — Ce que les visiteurs peuvent organiser */}
         <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
           <div className="mb-12 max-w-2xl">
             <Eyebrow>À organiser par vos soins</Eyebrow>
@@ -49,13 +52,12 @@ export default function ActivitesPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {ORGANIZABLE_EVENTS.map((event) => (
+            {events.map((event) => (
               <EventOfferingCard key={event.slug} event={event} />
             ))}
           </div>
         </section>
 
-        {/* Partie 2 — Services proposés par l'hôtel */}
         <section className="bg-sand py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-6 md:px-10">
             <div className="mb-12 max-w-2xl">
@@ -77,7 +79,6 @@ export default function ActivitesPage() {
           </div>
         </section>
 
-        {/* CTA + note excursions */}
         <section className="max-w-3xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="font-display text-2xl md:text-3xl text-palm-deep mb-4">
             Demander un devis

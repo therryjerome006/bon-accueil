@@ -2,41 +2,21 @@ import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/types/database.types";
 import { allowStaticFallback, hasSupabasePublic } from "@/lib/env";
-import { firstImageUrl, normalizeImageUrl } from "@/lib/image-url";
-import { SITE_IMAGES } from "@/lib/site-images";
+import { normalizeImageUrl } from "@/lib/image-url";
+import {
+  chambreGalleryForSlug,
+  getChambresGalleries,
+  imageUrls,
+} from "@/lib/image-gallery.server";
+import type { Room } from "@/lib/rooms.types";
 
-export const AMENITY_LABELS = [
-  "Télévision",
-  "Air conditionné",
-  "Toilettes séparées",
-  "Coffre-fort",
-  "Machine à laver",
-  "Machine à café",
-  "Machine à thé",
-  "Sèche-cheveux",
-] as const;
+export type { Room } from "@/lib/rooms.types";
+export { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms.constants";
 
-export const SERVICE_LABELS = [
-  "Accès internet",
-  "Service de chambre",
-  "Parking gratuit",
-] as const;
+async function buildStaticRooms(): Promise<Room[]> {
+  const g = getChambresGalleries();
 
-export type Room = {
-  id?: string;
-  slug: string;
-  title: string;
-  price: number;
-  capacity: number;
-  surface: number;
-  description: string;
-  images: string[];
-  amenities: string[];
-  services: string[];
-  isFeatured?: boolean;
-};
-
-const STATIC_ROOMS: Room[] = [
+  return [
   {
     slug: "chambre-standard",
     title: "Chambre Standard",
@@ -45,7 +25,7 @@ const STATIC_ROOMS: Room[] = [
     surface: 22,
     description:
       "Une chambre lumineuse et fonctionnelle, idéale pour un séjour court à Jacmel. Vue jardin et colline, air frais des hauteurs, literie confortable et ambiance apaisante.",
-    images: [SITE_IMAGES.chambres.standard],
+    images: imageUrls(g.standard),
     amenities: ["Télévision", "Air conditionné", "Toilettes séparées", "Sèche-cheveux"],
     services: ["Accès internet", "Parking gratuit"],
     isFeatured: true,
@@ -58,7 +38,7 @@ const STATIC_ROOMS: Room[] = [
     surface: 32,
     description:
       "Espace généreux avec terrasse privée et vue dominante sur Jacmel. Finitions en bois local, salle de bain spacieuse et brise légère des hauteurs pour un séjour prolongé.",
-    images: [SITE_IMAGES.chambres.deluxe],
+    images: imageUrls(g.deluxe),
     amenities: [
       "Télévision",
       "Air conditionné",
@@ -79,7 +59,7 @@ const STATIC_ROOMS: Room[] = [
     surface: 55,
     description:
       "Notre suite signature : salon séparé, deux chambres, terrasse panoramique sur Jacmel et les collines. L'expérience ultime de l'hospitalité jacmélienne, au calme de la campagne.",
-    images: [SITE_IMAGES.chambres.suite],
+    images: imageUrls(g.suite),
     amenities: [
       "Télévision",
       "Air conditionné",
@@ -94,8 +74,9 @@ const STATIC_ROOMS: Room[] = [
     isFeatured: true,
   },
 ];
+}
 
-function mapDbRoom(row: Tables<"rooms">): Room {
+async function mapDbRoom(row: Tables<"rooms">): Promise<Room> {
   return {
     id: row.id,
     slug: row.slug,
@@ -104,7 +85,10 @@ function mapDbRoom(row: Tables<"rooms">): Room {
     capacity: row.capacity,
     surface: row.surface ?? 0,
     description: row.description ?? "",
-    images: row.images.length > 0 ? row.images.map(normalizeImageUrl).filter(Boolean) : [SITE_IMAGES.chambres.fallback],
+    images:
+      row.images.length > 0
+        ? row.images.map(normalizeImageUrl).filter(Boolean)
+        : imageUrls(chambreGalleryForSlug(row.slug)),
     amenities: row.amenities,
     services: row.services,
     isFeatured: row.is_featured,
@@ -112,13 +96,15 @@ function mapDbRoom(row: Tables<"rooms">): Room {
 }
 
 async function fetchRoomsFromDb(): Promise<{ rooms: Room[]; error?: boolean }> {
+  const staticRooms = await buildStaticRooms();
+
   if (!hasSupabasePublic()) {
-    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [] };
+    return { rooms: allowStaticFallback() ? staticRooms : [] };
   }
 
   const supabase = createPublicClient();
   if (!supabase) {
-    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [] };
+    return { rooms: allowStaticFallback() ? staticRooms : [] };
   }
 
   try {
@@ -130,13 +116,14 @@ async function fetchRoomsFromDb(): Promise<{ rooms: Room[]; error?: boolean }> {
 
     if (error) {
       console.error("[rooms] fetch:", error.message);
-      return { rooms: allowStaticFallback() ? STATIC_ROOMS : [], error: true };
+      return { rooms: allowStaticFallback() ? staticRooms : [], error: true };
     }
 
-    return { rooms: (data ?? []).map(mapDbRoom) };
+    const rooms = await Promise.all((data ?? []).map(mapDbRoom));
+    return { rooms };
   } catch (err) {
     console.error("[rooms] fetch:", err instanceof Error ? err.message : err);
-    return { rooms: allowStaticFallback() ? STATIC_ROOMS : [], error: true };
+    return { rooms: allowStaticFallback() ? staticRooms : [], error: true };
   }
 }
 
@@ -163,7 +150,7 @@ export async function getRoomBySlug(slug: string): Promise<Room | null> {
           .eq("status", "available")
           .maybeSingle();
 
-        if (!error && data) return mapDbRoom(data);
+        if (!error && data) return await mapDbRoom(data);
         if (!error) return null;
         console.error("[rooms] getBySlug:", error.message);
       } catch (err) {
@@ -172,11 +159,9 @@ export async function getRoomBySlug(slug: string): Promise<Room | null> {
     }
   }
 
-  return allowStaticFallback() ? (STATIC_ROOMS.find((r) => r.slug === slug) ?? null) : null;
-}
-
-export function getRoomImage(room: Room): string {
-  return firstImageUrl(room.images, SITE_IMAGES.chambres.fallback);
+  if (!allowStaticFallback()) return null;
+  const staticRooms = await buildStaticRooms();
+  return staticRooms.find((r) => r.slug === slug) ?? null;
 }
 
 function staticRoomToInsert(room: Room) {
@@ -264,22 +249,49 @@ export async function checkRoomAvailability(
   roomId: string,
   checkIn: string,
   checkOut: string,
+  excludeReservationId?: string | null,
 ): Promise<{ available: boolean; error?: string }> {
-  if (!hasSupabasePublic()) {
-    if (allowStaticFallback()) return { available: true };
-    return { available: false, error: "Supabase non configuré." };
-  }
-
-  const supabase = createPublicClient();
-  if (!supabase) {
-    return { available: false, error: "Supabase non configuré." };
-  }
-
   try {
+    const { createAdminClient, hasAdminClient } = await import("@/lib/supabase/admin");
+
+    if (hasAdminClient()) {
+      const admin = createAdminClient();
+      let query = admin
+        .from("reservations")
+        .select("id")
+        .eq("room_id", roomId)
+        .in("status", ["pending", "confirmed"])
+        .lt("check_in", checkOut)
+        .gt("check_out", checkIn)
+        .limit(1);
+
+      if (excludeReservationId) {
+        query = query.neq("id", excludeReservationId);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error("[availability]", error.message);
+        return { available: false, error: error.message };
+      }
+      return { available: !data?.length };
+    }
+
+    if (!hasSupabasePublic()) {
+      if (allowStaticFallback()) return { available: true };
+      return { available: false, error: "Supabase non configuré." };
+    }
+
+    const supabase = createPublicClient();
+    if (!supabase) {
+      return { available: false, error: "Supabase non configuré." };
+    }
+
     const { data, error } = await supabase.rpc("is_room_available", {
-    p_room_id: roomId,
-    p_check_in: checkIn,
-    p_check_out: checkOut,
+      p_room_id: roomId,
+      p_check_in: checkIn,
+      p_check_out: checkOut,
+      p_exclude_reservation_id: excludeReservationId ?? undefined,
     });
 
     if (error) {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Syne } from "next/font/google";
 import { HOTEL_DESCRIPTION, HOTEL_NAME, HOTEL_CITY } from "@/lib/hotel";
 import { NotificationFab } from "@/components/NotificationFab";
 import "./globals.css";
@@ -19,6 +19,13 @@ const inter = Inter({
   display: "swap",
 });
 
+const syne = Syne({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-syne",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: `${HOTEL_NAME} — ${HOTEL_CITY}`,
   description: HOTEL_DESCRIPTION,
@@ -27,7 +34,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className={`${fraunces.variable} ${inter.variable} font-sans bg-linen text-ink`}>
+      <body className={`${fraunces.variable} ${inter.variable} ${syne.variable} font-sans bg-linen text-ink`}>
         {children}
         <NotificationFab />
       </body>

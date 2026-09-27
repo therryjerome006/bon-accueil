@@ -1,8 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { MapPin, Wifi, Coffee, Car, Wind, Tv, ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FrondDivider } from "@/components/ui/FrondDivider";
 import { RoomCard } from "@/components/RoomCard";
@@ -15,11 +16,13 @@ import {
   HOTEL_CITY,
 } from "@/lib/hotel";
 import { getContactPhone } from "@/lib/env";
-import { SITE_IMAGES } from "@/lib/site-images";
+import { getAccueilGalleries, getHeroSlides } from "@/lib/image-gallery.server";
 
 export default async function HomePage() {
   const featuredRooms = await getRooms(true);
   const phone = getContactPhone();
+  const heroSlides = getHeroSlides();
+  const accueil = getAccueilGalleries();
 
   return (
     <main>
@@ -27,36 +30,35 @@ export default async function HomePage() {
 
       {/* HERO */}
       <section className="relative h-screen min-h-[640px] flex items-center justify-center text-center overflow-hidden">
-        <Image
-          src={SITE_IMAGES.hero}
-          alt="Vue sur Jacmel depuis les hauteurs"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-palm-deep/55 via-palm-deep/35 to-palm-deep/75" />
+        <HeroCarousel slides={heroSlides} />
+        <div className="absolute inset-0 bg-gradient-to-b from-palm-deep/55 via-palm-deep/35 to-palm-deep/75 z-[1]" />
         <div className="relative z-10 px-6 max-w-3xl">
-          <p className="text-xs md:text-sm tracking-[0.3em] uppercase mb-5 text-sand">{HOTEL_CITY}</p>
-          <h1 className="font-display text-4xl md:text-6xl leading-tight mb-6 text-linen">
+          <div
+            className="pointer-events-none absolute -inset-x-8 -inset-y-10 -z-10 rounded-2xl bg-black/35 blur-2xl"
+            aria-hidden
+          />
+          <p className="font-hero text-sm md:text-base font-bold tracking-[0.28em] uppercase mb-5 text-white text-shadow-hero-sm">
+            {HOTEL_CITY}
+          </p>
+          <h1 className="font-hero text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] mb-6 text-white text-shadow-hero">
             Un accueil chaleureux,
             <br />
             au-dessus de Jacmel
           </h1>
-          <p className="text-base md:text-lg mb-10 max-w-xl mx-auto text-palm-soft">
+          <p className="text-base md:text-lg font-semibold mb-10 max-w-xl mx-auto text-linen text-shadow-hero-sm leading-relaxed">
             À la campagne, en hauteur — air frais et doux, vue dominante sur la ville.
             Chambres confortables, table créole et jardins paisibles sur la Route de l&apos;Amitié.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/chambres"
-              className="px-8 py-3.5 text-sm tracking-wide bg-palm-deep text-linen rounded-sm hover:bg-palm transition-colors w-full sm:w-auto"
+              className="font-hero px-8 py-3.5 text-sm font-bold tracking-wide bg-white text-palm-deep rounded-sm hover:bg-linen transition-colors w-full sm:w-auto shadow-lg"
             >
               Chambres
             </Link>
             <Link
               href="/services"
-              className="px-8 py-3.5 text-sm tracking-wide border border-linen text-linen rounded-sm hover:bg-linen hover:text-palm-deep transition-colors w-full sm:w-auto"
+              className="font-hero px-8 py-3.5 text-sm font-bold tracking-wide border-2 border-white text-white rounded-sm hover:bg-white hover:text-palm-deep transition-colors w-full sm:w-auto text-shadow-hero-sm"
             >
               Services
             </Link>
@@ -67,22 +69,18 @@ export default async function HomePage() {
       {/* INTRO */}
       <section className="max-w-7xl mx-auto px-6 md:px-10 py-24 md:py-32 grid md:grid-cols-2 gap-14 items-center">
         <div className="relative">
-          <div className="relative w-full h-[420px] rounded-sm overflow-hidden">
-            <Image
-              src={SITE_IMAGES.accueil.jardin}
-              alt="Jardin et piscine de l'hôtel"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          </div>
+          <GalleryFrame
+            slides={accueil.jardin}
+            className="relative w-full h-[420px]"
+            label="Jardin et piscine"
+            priority
+          />
           <div className="hidden md:block absolute -bottom-10 -right-10 w-56 h-40 rounded-sm overflow-hidden border-4 border-linen">
-            <Image
-              src={SITE_IMAGES.accueil.restaurantApercu}
-              alt="Table dressée au restaurant"
-              fill
-              sizes="224px"
-              className="object-cover"
+            <GalleryFrame
+              slides={accueil.restaurant}
+              variant="card"
+              className="relative w-full h-full"
+              label="Restaurant"
             />
           </div>
         </div>
@@ -116,15 +114,11 @@ export default async function HomePage() {
           </div>
           <div className="grid md:grid-cols-2 gap-10">
             <div className="bg-white rounded-sm overflow-hidden">
-              <div className="relative w-full h-72">
-                <Image
-                  src={SITE_IMAGES.accueil.gastronomie}
-                  alt="Gastronomie créole"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
+              <GalleryFrame
+                slides={accueil.gastronomie}
+                className="relative w-full h-72"
+                label="Gastronomie créole"
+              />
               <div className="p-8">
                 <h3 className="font-display text-2xl mb-3 text-palm-deep">Gastronomie</h3>
                 <p className="text-sm leading-relaxed text-ink/80">
@@ -134,15 +128,11 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="bg-white rounded-sm overflow-hidden">
-              <div className="relative w-full h-72">
-                <Image
-                  src={SITE_IMAGES.accueil.groupes}
-                  alt="Événements en groupe à l'hôtel"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
+              <GalleryFrame
+                slides={accueil.groupes}
+                className="relative w-full h-72"
+                label="Groupes et événements"
+              />
               <div className="p-8">
                 <h3 className="font-display text-2xl mb-3 text-palm-deep">Groupes &amp; événements</h3>
                 <p className="text-sm leading-relaxed text-ink/80">

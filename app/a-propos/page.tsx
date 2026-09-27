@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageHero } from "@/components/PageHero";
+import { GalleryFrame } from "@/components/GalleryFrame";
 import { HOTEL_DESCRIPTION } from "@/lib/hotel";
-import { SITE_IMAGES } from "@/lib/site-images";
+import { getAProposGalleries } from "@/lib/image-gallery.server";
 
 export const metadata: Metadata = {
   title: "À propos — Bon Accueil Hotel",
@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default function AProposPage() {
+  const aPropos = getAProposGalleries();
+
   return (
     <>
       <Navbar />
@@ -20,11 +22,15 @@ export default function AProposPage() {
           eyebrow="Notre histoire"
           title="Bon Accueil, une maison sur les hauteurs"
           description="À la campagne, face à Jacmel — l'hospitalité haïtienne dans un cadre aéré et paisible."
+          slides={aPropos.hero}
         />
         <section className="max-w-3xl mx-auto px-6 py-16 leading-relaxed text-ink/80 space-y-6">
-          <div className="relative w-full h-64 rounded-sm overflow-hidden mb-8">
-            <Image src={SITE_IMAGES.aPropos.maison} alt="Bon Accueil Hotel" fill className="object-cover" />
-          </div>
+          <GalleryFrame
+            slides={aPropos.maison}
+            className="relative w-full h-64 md:h-80 mb-8"
+            label="Bon Accueil Hotel"
+            priority
+          />
           <p>
             Bon Accueil est un hôtel perché en hauteur, à la campagne, sur la Route de l&apos;Amitié.
             Loin du bruit du centre, on y respire un air frais et doux ; depuis les terrasses et

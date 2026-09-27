@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/auth-api";
 import { getAdminDb } from "@/lib/admin/db";
 import { slugify } from "@/lib/admin/navigation";
-import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms";
+import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms.constants";
 import type { TablesUpdate } from "@/types/database.types";
 
 type RouteParams = { params: Promise<{ id: string }> };

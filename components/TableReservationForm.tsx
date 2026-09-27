@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AppImage } from "@/components/AppImage";
+import { AppMedia } from "@/components/AppMedia";
 import { Users } from "lucide-react";
-import type { RestaurantTable } from "@/lib/restaurant";
-import { getTableImage, getTableReservationParam } from "@/lib/restaurant";
+import type { RestaurantTable } from "@/lib/restaurant.types";
+import { getTableImage, getTableReservationParam } from "@/lib/restaurant-utils";
 
 type TableReservationFormProps = {
   table: RestaurantTable;
@@ -147,7 +147,7 @@ export function TableReservationForm({ table, isLoggedIn, accountEmail }: TableR
     <div className="grid lg:grid-cols-5 gap-10 lg:gap-14">
       <div className="lg:col-span-2">
         <div className="relative w-full h-56 lg:h-72 rounded-sm overflow-hidden mb-5">
-          <AppImage src={getTableImage(table)} alt={table.name} fill sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover" />
+          <AppMedia src={getTableImage(table)} alt={table.name} fill sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover" playing />
         </div>
         <h2 className="font-display text-2xl text-palm-deep mb-2">{table.name}</h2>
         <p className="flex items-center gap-2 text-sm text-palm mb-3">

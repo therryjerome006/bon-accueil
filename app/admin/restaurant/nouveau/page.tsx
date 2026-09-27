@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { getSiteImages } from "@/lib/image-gallery.server";
 import { AdminTableForm } from "@/components/admin/AdminTableForm";
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 
 export default async function AdminNewTablePage() {
   await requireAdmin();
+  const imageFallback = getSiteImages().restaurant.fallback;
 
   return (
     <div>
@@ -16,7 +18,7 @@ export default async function AdminNewTablePage() {
         ← Retour au restaurant
       </Link>
       <h1 className="font-display text-3xl text-palm-deep mb-8">Ajouter une table</h1>
-      <AdminTableForm />
+      <AdminTableForm imageFallback={imageFallback} />
     </div>
   );
 }
