@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/admin/auth-api";
 import { getAdminDb } from "@/lib/admin/db";
 import { slugify } from "@/lib/admin/navigation";
 import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms.constants";
+import { revalidateRoomsCatalog } from "@/lib/revalidate-rooms";
 
 export async function POST(request: Request) {
   const auth = await requireAdminApi();
@@ -45,6 +46,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  revalidateRoomsCatalog(slug);
   return NextResponse.json({ id: data.id });
 }
 

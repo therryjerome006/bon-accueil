@@ -1,22 +1,22 @@
 -- Remise à zéro des données de test (Supabase → SQL Editor)
--- Conserve : chambres, activités, tables restaurant, comptes admin
--- Supprime : réservations chambres, réservations restaurant, inscriptions activités
+-- Conserve : tous les comptes (auth.users + profiles), catalogue (chambres, tables, activités)
+-- Supprime : réservations, notifications
 
 BEGIN;
 
-TRUNCATE TABLE activity_bookings, table_reservations, reservations RESTART IDENTITY;
-
-DELETE FROM profiles WHERE role <> 'admin';
+TRUNCATE TABLE
+  public.activity_bookings,
+  public.table_reservations,
+  public.reservations,
+  public.notifications
+RESTART IDENTITY;
 
 COMMIT;
 
--- Comptes auth : supprimez les utilisateurs non-admin dans
--- Supabase Dashboard → Authentication → Users
--- ou exécutez : node scripts/reset-test-data.mjs --confirm
-
 SELECT
-  (SELECT count(*) FROM reservations) AS reservations,
-  (SELECT count(*) FROM table_reservations) AS table_reservations,
-  (SELECT count(*) FROM activity_bookings) AS activity_bookings,
-  (SELECT count(*) FROM profiles) AS profiles,
-  (SELECT count(*) FROM rooms) AS rooms;
+  (SELECT count(*) FROM public.reservations) AS reservations,
+  (SELECT count(*) FROM public.table_reservations) AS table_reservations,
+  (SELECT count(*) FROM public.activity_bookings) AS activity_bookings,
+  (SELECT count(*) FROM public.notifications) AS notifications,
+  (SELECT count(*) FROM public.profiles) AS profiles,
+  (SELECT count(*) FROM public.rooms) AS rooms;

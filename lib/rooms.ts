@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { ROOMS_LIST_CACHE_TAG } from "@/lib/revalidate-rooms";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/types/database.types";
 import { allowStaticFallback, hasSupabasePublic } from "@/lib/env";
@@ -116,25 +117,28 @@ async function fetchRoomsFromDb(): Promise<{ rooms: Room[]; error?: boolean }> {
 
     if (error) {
       console.error("[rooms] fetch:", error.message);
-      return { rooms: allowStaticFallback() ? staticRooms : [], error: true };
+      return { rooms: [], error: true };
     }
 
     const rooms = await Promise.all((data ?? []).map(mapDbRoom));
     return { rooms };
   } catch (err) {
     console.error("[rooms] fetch:", err instanceof Error ? err.message : err);
-    return { rooms: allowStaticFallback() ? staticRooms : [], error: true };
+    return { rooms: [], error: true };
   }
 }
 
 const fetchRoomsCached = unstable_cache(
   async () => fetchRoomsFromDb(),
   ["rooms-list"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: [ROOMS_LIST_CACHE_TAG] },
 );
 
 export async function getRooms(featuredOnly = false): Promise<Room[]> {
-  const { rooms } = await fetchRoomsCached();
+  let { rooms } = await fetchRoomsCached();
+  if (hasSupabasePublic()) {
+    rooms = rooms.filter((r) => Boolean(r.id));
+  }
   return featuredOnly ? rooms.filter((r) => r.isFeatured !== false).slice(0, 3) : rooms;
 }
 
@@ -157,6 +161,7 @@ export async function getRoomBySlug(slug: string): Promise<Room | null> {
         console.error("[rooms] getBySlug:", err instanceof Error ? err.message : err);
       }
     }
+    return null;
   }
 
   if (!allowStaticFallback()) return null;

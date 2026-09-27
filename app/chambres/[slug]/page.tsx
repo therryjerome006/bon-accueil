@@ -13,6 +13,8 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const rooms = await getRooms();
   return rooms.map((room) => ({ slug: room.slug }));

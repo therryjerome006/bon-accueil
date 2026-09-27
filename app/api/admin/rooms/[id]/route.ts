@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/admin/db";
 import { slugify } from "@/lib/admin/navigation";
 import { AMENITY_LABELS, SERVICE_LABELS } from "@/lib/rooms.constants";
 import type { TablesUpdate } from "@/types/database.types";
+import { revalidateRoomsCatalog } from "@/lib/revalidate-rooms";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -22,6 +23,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const body = await request.json();
   const db = getAdminDb();
+
+  const { data: before } = await db.from("rooms").select("slug").eq("id", id).maybeSingle();
 
   const update: TablesUpdate<"rooms"> = {};
   if (body.title != null) update.title = body.title.trim();
@@ -47,6 +50,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
   const { error } = await db.from("rooms").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const slug = update.slug ?? body.slug?.trim() ?? before?.slug;
+  revalidateRoomsCatalog(typeof slug === "string" ? slug : before?.slug);
   return NextResponse.json({ success: true });
 }
 
@@ -56,8 +62,13 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
 
   const { id } = await params;
   const db = getAdminDb();
+
+  const { data: existing } = await db.from("rooms").select("slug").eq("id", id).maybeSingle();
+
   const { error } = await db.from("rooms").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  revalidateRoomsCatalog(existing?.slug);
   return NextResponse.json({ success: true });
 }

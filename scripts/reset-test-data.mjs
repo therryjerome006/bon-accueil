@@ -5,8 +5,8 @@
  *   node scripts/reset-test-data.mjs           # aperçu (dry-run)
  *   node scripts/reset-test-data.mjs --confirm # exécution réelle
  *
- * Conserve : chambres, activités, tables restaurant, comptes admin
- * Supprime : réservations, inscriptions activités, utilisateurs non-admin
+ * Conserve : comptes utilisateurs (auth + profiles), chambres, activités, tables restaurant
+ * Supprime : réservations chambres/restaurant, inscriptions activités, notifications
  */
 
 import { readFileSync } from "fs";
@@ -44,24 +44,11 @@ const admin = createClient(url, service, { auth: { persistSession: false, autoRe
 
 async function count(table) {
   const { count: n, error } = await admin.from(table).select("*", { count: "exact", head: true });
-  if (error) throw new Error(`${table}: ${error.message}`);
-  return n ?? 0;
-}
-
-async function listAuthUsers() {
-  const users = [];
-  let page = 1;
-  const perPage = 100;
-
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) throw error;
-    users.push(...data.users);
-    if (data.users.length < perPage) break;
-    page += 1;
+  if (error) {
+    if (error.message.includes("Could not find")) return 0;
+    throw new Error(`${table}: ${error.message}`);
   }
-
-  return users;
+  return n ?? 0;
 }
 
 console.log(confirm ? "🔄 Remise à zéro en cours…\n" : "👀 Aperçu (dry-run) — ajoutez --confirm pour exécuter\n");
@@ -70,74 +57,52 @@ const before = {
   reservations: await count("reservations"),
   table_reservations: await count("table_reservations"),
   activity_bookings: await count("activity_bookings"),
+  notifications: await count("notifications"),
   profiles: await count("profiles"),
   rooms: await count("rooms"),
   activities: await count("activities"),
   restaurant_tables: await count("restaurant_tables"),
 };
 
-const { data: adminProfiles, error: adminErr } = await admin
-  .from("profiles")
-  .select("id, email")
-  .eq("role", "admin");
-
-if (adminErr) throw adminErr;
-
-const adminIds = new Set((adminProfiles ?? []).map((p) => p.id));
-const authUsers = await listAuthUsers();
-const usersToDelete = authUsers.filter((u) => !adminIds.has(u.id));
-
 console.log("État actuel :");
 console.log(`  Réservations chambres : ${before.reservations}`);
 console.log(`  Réservations restaurant : ${before.table_reservations}`);
 console.log(`  Inscriptions activités : ${before.activity_bookings}`);
-console.log(`  Profils : ${before.profiles} (${adminProfiles?.length ?? 0} admin)`);
-console.log(`  Catalogue : ${before.rooms} chambres, ${before.activities} activités, ${before.restaurant_tables} tables`);
-console.log(`  Comptes auth à supprimer : ${usersToDelete.length}`);
-
-if (usersToDelete.length > 0) {
-  console.log("  →", usersToDelete.map((u) => u.email ?? u.id).join(", "));
-}
+console.log(`  Notifications : ${before.notifications}`);
+console.log(`  Profils (conservés) : ${before.profiles}`);
+console.log(`  Catalogue (conservé) : ${before.rooms} chambres, ${before.activities} activités, ${before.restaurant_tables} tables`);
 
 if (!confirm) {
   console.log("\nPour appliquer : node scripts/reset-test-data.mjs --confirm");
   console.log("  ou : npm run reset:test");
   console.log("\nSi erreur 'permission denied', exécutez supabase/grants-reset.sql dans le SQL Editor.");
   console.log("Alternative SQL directe : supabase/reset-test-data.sql");
-  console.log("\nNote Stripe : les paiements test restent dans le dashboard Stripe (mode test).");
-  console.log("Les codes transaction en base seront supprimés avec les réservations.");
   process.exit(0);
 }
 
-for (const table of ["activity_bookings", "table_reservations", "reservations"]) {
+for (const table of ["activity_bookings", "table_reservations", "reservations", "notifications"]) {
   const { error } = await admin.from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  if (error) throw new Error(`delete ${table}: ${error.message}`);
-  console.log(`✓ ${table} vidée`);
-}
-
-const { error: profileDeleteErr } = await admin.from("profiles").delete().neq("role", "admin");
-if (profileDeleteErr) throw profileDeleteErr;
-console.log("✓ profils non-admin supprimés");
-
-for (const user of usersToDelete) {
-  const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
-    console.warn(`⚠ impossible de supprimer ${user.email ?? user.id}: ${error.message}`);
-  } else {
-    console.log(`✓ auth supprimé : ${user.email ?? user.id}`);
+    if (error.message.includes("Could not find") && table === "notifications") {
+      console.log(`⊘ ${table} (table absente, ignorée)`);
+      continue;
+    }
+    throw new Error(`delete ${table}: ${error.message}`);
   }
+  console.log(`✓ ${table} vidée`);
 }
 
 const after = {
   reservations: await count("reservations"),
   table_reservations: await count("table_reservations"),
   activity_bookings: await count("activity_bookings"),
+  notifications: await count("notifications"),
   profiles: await count("profiles"),
 };
 
-console.log("\n✅ Remise à zéro terminée");
+console.log("\n✅ Remise à zéro terminée (utilisateurs inchangés)");
 console.log(`  Réservations chambres : ${after.reservations}`);
 console.log(`  Réservations restaurant : ${after.table_reservations}`);
 console.log(`  Inscriptions activités : ${after.activity_bookings}`);
-console.log(`  Profils restants : ${after.profiles}`);
-console.log("\nPensez à vider les cookies du navigateur (session test) et relancer npm run dev.");
+console.log(`  Notifications : ${after.notifications}`);
+console.log(`  Profils : ${after.profiles}`);
